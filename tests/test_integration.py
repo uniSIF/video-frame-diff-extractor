@@ -296,8 +296,8 @@ class TestCropProcessingFlow:
         call_kwargs = MockCropProcessor.call_args[1]
         assert call_kwargs["scan_area"] == (90, 0, 110, 200)
 
-    def test_crop_fallback_when_no_marker_found(self, tmp_path: Path) -> None:
-        """Test that original image is saved when condition image is not found."""
+    def test_crop_skip_when_no_marker_found(self, tmp_path: Path) -> None:
+        """Test that image is skipped when condition image is not found."""
         frame1 = np.zeros((100, 100, 3), dtype=np.uint8)
         frame2 = np.full((100, 100, 3), 128, dtype=np.uint8)  # No markers
 
@@ -319,12 +319,12 @@ class TestCropProcessingFlow:
             scan_area=None,
         )
 
-        assert detected_count == 1
+        # Image should be skipped when no marker is found
+        assert detected_count == 0
 
-        # Original image should be saved (not cropped)
+        # No images should be saved
         output_images = list(output_dir.glob("*.png"))
-        saved_img = cv2.imread(str(output_images[0]))
-        assert saved_img.shape[0] == 100  # Original height
+        assert len(output_images) == 0
 
     def test_crop_warning_displayed_on_single_marker(self, tmp_path: Path) -> None:
         """Test that warning is displayed when only one marker is found."""

@@ -153,7 +153,7 @@ class TestCropProcessorCrop:
         assert isinstance(result, CropResult)
 
     def test_crop_result_has_required_fields(self) -> None:
-        """CropResult should have image, start_y, end_y, match_count fields."""
+        """CropResult should have image, start_y, end_y, match_count, should_save fields."""
         image, marker = create_test_image_with_markers(marker_positions=[50, 150])
         processor = CropProcessor(marker)
         result = processor.crop(image)
@@ -161,6 +161,7 @@ class TestCropProcessorCrop:
         assert hasattr(result, 'start_y')
         assert hasattr(result, 'end_y')
         assert hasattr(result, 'match_count')
+        assert hasattr(result, 'should_save')
         assert hasattr(result, 'warning')
 
     def test_crop_match_count_reflects_found_markers(self) -> None:
@@ -216,6 +217,15 @@ class TestCropProcessorCropEdgeCases:
         assert result.warning is not None
         assert len(result.warning) > 0
 
+    def test_crop_no_match_should_save_is_false(self) -> None:
+        """When no match found, should_save should be False."""
+        image = np.ones((300, 200, 3), dtype=np.uint8) * 128
+        marker = np.zeros((20, 20, 3), dtype=np.uint8)
+        marker[:, :, 0] = 255
+        processor = CropProcessor(marker, match_threshold=0.95)
+        result = processor.crop(image)
+        assert result.should_save is False
+
     def test_crop_no_match_start_y_is_zero(self) -> None:
         """When no match found, start_y should be 0."""
         image = np.ones((300, 200, 3), dtype=np.uint8) * 128
@@ -264,6 +274,24 @@ class TestCropProcessorCropEdgeCases:
         processor = CropProcessor(marker)
         result = processor.crop(image)
         assert result.match_count == 1
+
+    def test_crop_single_match_should_save_is_true(self) -> None:
+        """When single match, should_save should be True."""
+        image, marker = create_test_image_with_markers(
+            height=300, marker_positions=[100]
+        )
+        processor = CropProcessor(marker)
+        result = processor.crop(image)
+        assert result.should_save is True
+
+    def test_crop_two_matches_should_save_is_true(self) -> None:
+        """When two matches, should_save should be True."""
+        image, marker = create_test_image_with_markers(
+            height=300, marker_positions=[50, 150]
+        )
+        processor = CropProcessor(marker)
+        result = processor.crop(image)
+        assert result.should_save is True
 
     def test_crop_maintains_full_width(self) -> None:
         """Cropped image should maintain original width."""

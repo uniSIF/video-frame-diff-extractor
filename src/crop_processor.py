@@ -18,6 +18,7 @@ class CropResult:
     start_y: int
     end_y: int
     match_count: int
+    should_save: bool = True
     warning: Optional[str] = None
 
 
@@ -116,13 +117,14 @@ class CropProcessor:
         warning: Optional[str] = None
 
         if match_count == 0:
-            # No match: return original image with warning
-            warning = "条件画像が見つかりませんでした。元画像を保存します。"
+            # No match: skip saving this image
+            warning = "条件画像が見つかりませんでした。この画像はスキップします。"
             return CropResult(
                 image=image,
                 start_y=0,
                 end_y=height,
                 match_count=0,
+                should_save=False,
                 warning=warning,
             )
         elif match_count == 1:
