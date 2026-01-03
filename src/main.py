@@ -68,15 +68,18 @@ def process_video(
                 if detector.detect(prev_frame, frame):
                     # Apply cropping if enabled
                     output_image = frame
+                    should_save = True
                     if crop_processor is not None:
                         crop_result = crop_processor.crop(frame)
                         output_image = crop_result.image
+                        should_save = crop_result.should_save
                         if crop_result.warning:
                             reporter.error(crop_result.warning)
 
-                    # Save the image
-                    writer.save(output_image, frame_num, loader.fps)
-                    detected_count += 1
+                    # Save the image (skip if crop condition not matched)
+                    if should_save:
+                        writer.save(output_image, frame_num, loader.fps)
+                        detected_count += 1
 
             prev_frame = frame
             reporter.update(frame_num + 1, detected_count)
